@@ -1,0 +1,54 @@
+name: Daily Agentic Learning Email
+
+on:
+  # 06:00 UTC = 09:00 Israel Summer Time (UTC+3, April–October)
+  # Change to 07:00 UTC in winter months (UTC+2)
+  schedule:
+    - cron: '0 6 * * *'
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to commit progress.json back to the repo
+
+jobs:
+  send-chapter:
+    name: Send Next Chapter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Send next chapter email
+        run: npm run send-next
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
+          MAX_TOKENS: '16000'
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          DAILY_CRON: '0 6 * * *'
+
+      - name: Commit updated progress.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/progress.json
+          git diff --staged --quiet && echo "No progress change to commit" || (
+            git commit -m "chore: progress update [skip ci]" &&
+            git push
+          )
