@@ -23,7 +23,7 @@ export class SchedulerService implements OnModuleInit {
   onModuleInit() {
     const cronExpression = this.configService.get<string>(
       'DAILY_CRON',
-      '0 9 * * *',
+      '0 6 * * *',
     );
 
     const job = new CronJob(cronExpression, () => {
